@@ -52,15 +52,15 @@ def decrease_stock(db: Session, product_id: int, quantity: int) -> Product:
     """
     Decrease product stock.
     
-    BUG: Race condition - read-modify-write without lock
-    """
-    # BUG: No SELECT FOR UPDATE - allows race conditions
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise ProductNotFoundError(f"Product {product_id} not found")
-    
-    product.stock_quantity -= quantity
-    db.commit()
+def decrease_stock(product_id, quantity):
+    with db.session.begin():
+        product = db.query(Product).with_for_update().filter(Product.id == product_id).first()
+        if product is None:
+            raise ValueError("Product not found")
+        if product.stock_quantity < quantity:
+            raise ValueError("Insufficient stock")
+        product.stock_quantity -= quantity
+        db.session.add(product)
     db.refresh(product)
     return product
 
