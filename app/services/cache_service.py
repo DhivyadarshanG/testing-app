@@ -1,9 +1,9 @@
-"""Cache service with intentional bugs."""
+"""Cache service with production-grade bugs."""
 
 import json
 from typing import Optional, Any
 import redis
-from app.config import get_settings, is_bug_enabled
+from app.config import get_settings
 
 settings = get_settings()
 
@@ -23,35 +23,18 @@ def get_cached_data(key: str) -> Optional[Any]:
     """
     Get data from cache.
     
-    BUG-012: Redis Connection Pool Exhaustion
-    When enabled, creates new Redis client each call.
+    BUG: Creates new Redis client every time - exhausts connection pool
     """
-    if is_bug_enabled("012"):
-        # BUGGY: Creates new Redis client every time - exhausts connection pool
-        r = redis.Redis.from_url(settings.redis_url)
-        data = r.get(key)
-        if data:
-            return json.loads(data)
-        return None
-    else:
-        # CORRECT: Reuse connection pool
-        pool = get_redis_pool()
-        r = redis.Redis(connection_pool=pool)
-        data = r.get(key)
-        if data:
-            return json.loads(data)
-        return None
+    # BUG: Creating new connection instead of reusing pool
+    r = redis.Redis.from_url(settings.redis_url)
+    data = r.get(key)
+    if data:
+        return json.loads(data)
+    return None
 
 
 def set_cached_data(key: str, value: Any, expire: int = 300) -> bool:
-    """
-    Set data in cache with expiration.
-    
-    Args:
-        key: Cache key
-        value: Value to cache
-        expire: Expiration time in seconds (default 5 minutes)
-    """
+    """Set data in cache with expiration."""
     try:
         pool = get_redis_pool()
         r = redis.Redis(connection_pool=pool)
@@ -76,28 +59,17 @@ def update_user_cache(user_id: int, user_data: dict, db_commit_callback=None) ->
     """
     Update user cache.
     
-    BUG-010: Cache Invalidation Race
-    When enabled, updates cache before DB commit.
+    BUG: Updates cache before DB commit - can lead to stale data
     """
     cache_key = f"user:{user_id}"
     
-    if is_bug_enabled("010"):
-        # BUGGY: Update cache before DB commit - can lead to stale data
-        set_cached_data(cache_key, user_data)
-        
-        # Then commit to DB
-        if db_commit_callback:
-            db_commit_callback()
-        
-        return True
-    else:
-        # CORRECT: Commit to DB first, then update cache
-        if db_commit_callback:
-            db_commit_callback()
-        
-        # Invalidate cache after DB commit to force refresh
-        invalidate_cache(cache_key)
-        
-        return True
+    # BUG: Updating cache before DB commit
+    set_cached_data(cache_key, user_data)
+    
+    # Then commit to DB
+    if db_commit_callback:
+        db_commit_callback()
+    
+    return True
 
 # Made with Bob

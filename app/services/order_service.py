@@ -1,4 +1,4 @@
-"""Order service with intentional bugs."""
+"""Order service with production-grade bugs."""
 
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -12,40 +12,25 @@ from app.utils.exceptions import (
     InvalidQuantityError,
     PaymentFailedError
 )
-from app.config import is_bug_enabled
 
 
 def create_order(db: Session, user_id: int, product_id: int, quantity: int) -> Order:
     """
     Create a new order.
     
-    BUG-003: Missing User Validation in Order Creation
-    BUG-013: Negative Quantity Allowed
+    BUG 1: Missing user validation - crashes if user doesn't exist
+    BUG 2: No quantity validation - allows negative quantities
     """
-    # BUG-003: Missing user validation
-    if is_bug_enabled("003"):
-        # BUGGY: Access user.email without checking if user exists
-        user = db.query(User).filter(User.id == user_id).first()
-        email = user.email  # Will crash if user is None
-    else:
-        # CORRECT: Validate user exists
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    # BUG 1: Accessing user.email without checking if user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    email = user.email  # Will crash if user is None
     
     # Get product
     product = get_product(db, product_id)
     if not product:
         raise ProductNotFoundError(f"Product {product_id} not found")
     
-    # BUG-013: Negative quantity allowed
-    if is_bug_enabled("013"):
-        # BUGGY: No validation on quantity
-        pass
-    else:
-        # CORRECT: Validate quantity
-        if quantity <= 0:
-            raise InvalidQuantityError("Quantity must be positive")
+    # BUG 2: No validation on quantity - allows negative values
     
     # Calculate order details
     unit_price = product.price
@@ -78,75 +63,41 @@ def calculate_total(unit_price: float, quantity: int, discount_amount: float) ->
     """
     Calculate order total.
     
-    BUG-015: Order Total Miscalculation
-    When enabled, calculates tax on discounted price instead of original.
+    BUG: Tax calculated on discounted price instead of original
     """
     TAX_RATE = 0.10  # 10% tax
     
-    if is_bug_enabled("015"):
-        # BUGGY: Calculate tax on discounted price
-        subtotal = (unit_price * quantity) - discount_amount
-        tax = subtotal * TAX_RATE
-        total = subtotal + tax
-        return total
-    else:
-        # CORRECT: Calculate tax on original price, then apply discount
-        subtotal = unit_price * quantity
-        tax = subtotal * TAX_RATE
-        total = subtotal + tax - discount_amount
-        return total
+    # BUG: Calculating tax on discounted price (wrong!)
+    subtotal = (unit_price * quantity) - discount_amount
+    tax = subtotal * TAX_RATE
+    total = subtotal + tax
+    return total
 
 
 def process_payment(db: Session, order_id: int, payment_method: str) -> Order:
     """
     Process payment for an order.
     
-    BUG-007: Missing Transaction Rollback
-    When enabled, doesn't rollback on payment failure.
+    BUG: Missing transaction rollback - leaves inconsistent state on failure
     """
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise ProductNotFoundError(f"Order {order_id} not found")
     
-    if is_bug_enabled("007"):
-        # BUGGY: No transaction rollback on failure
-        order.status = OrderStatus.PROCESSING
-        db.commit()
-        
-        # Simulate payment processing
-        if payment_method == "invalid":
-            # Payment fails but order status already changed!
-            raise PaymentFailedError("Payment processing failed")
-        
-        order.payment_status = "completed"
-        order.status = OrderStatus.COMPLETED
-        db.commit()
-        db.refresh(order)
-        return order
-    else:
-        # CORRECT: Use try-except with rollback
-        try:
-            order.status = OrderStatus.PROCESSING
-            db.commit()
-            
-            # Simulate payment processing
-            if payment_method == "invalid":
-                raise PaymentFailedError("Payment processing failed")
-            
-            order.payment_status = "completed"
-            order.status = OrderStatus.COMPLETED
-            
-            # Decrease product stock
-            decrease_stock(db, order.product_id, order.quantity)
-            
-            db.commit()
-            db.refresh(order)
-            return order
-        except Exception as e:
-            db.rollback()
-            order.status = OrderStatus.FAILED
-            db.commit()
-            raise
+    # BUG: No try-except with rollback
+    order.status = OrderStatus.PROCESSING
+    db.commit()
+    
+    # Simulate payment processing
+    if payment_method == "invalid":
+        # Payment fails but order status already changed!
+        raise PaymentFailedError("Payment processing failed")
+    
+    order.payment_status = "completed"
+    order.status = OrderStatus.COMPLETED
+    db.commit()
+    db.refresh(order)
+    return order
 
 
 def get_order(db: Session, order_id: int) -> Optional[Order]:

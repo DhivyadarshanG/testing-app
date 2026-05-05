@@ -1,91 +1,59 @@
-# 🦗 Bug Zoo - Self-Healing Agent Test Application
+# 🦗 Bug Zoo - Buggy E-Commerce API
 
-A deliberately buggy FastAPI application designed to test and demonstrate self-healing bug fix agents. Contains 15 common bug patterns across 6 categories that can be toggled on/off for systematic testing.
+A production-grade e-commerce API with **intentional bugs** for testing self-healing agents. This application contains real bugs that commonly occur in production systems.
 
-## 🎯 Purpose
+## ⚠️ Warning
 
-This application serves as a comprehensive test suite for the **Self-Healing Bug Fix Agent** (wxo + Project Bob + Vector Memory). It provides:
+This application contains **intentional bugs** for testing purposes. Do not use in production!
 
-- **15 realistic bug patterns** that mirror production issues
-- **Controllable bug activation** via API or environment variables
-- **Comprehensive test suite** that fails when bugs are enabled
-- **CI/CD integration** that triggers the healing agent on failures
-- **Full API documentation** for easy exploration
+## 🐛 Bugs Included
 
-## 🏗️ Architecture
+This application contains **10 production-grade bugs** across different categories:
+
+### Authentication & Security Bugs
+1. **Missing Null Check on Token Validation** - Crashes when validating invalid tokens
+2. **Token Expiry Not Checked** - Accepts expired authentication tokens
+3. **Password Hash Not Verified** - Incorrect password comparison logic
+4. **Missing Permission Check** - Any user can delete any other user
+
+### Data Handling Bugs
+5. **Null Pointer on Discount Calculation** - Crashes when product has no discount
+6. **Missing User Validation** - Crashes when creating order with invalid user
+
+### Transaction & Concurrency Bugs
+7. **Missing Transaction Rollback** - Leaves inconsistent state when payment fails
+8. **Race Condition in Stock Update** - Concurrent orders can cause negative stock
+
+### Resource Management Bugs
+9. **Database Connection Leak** - Creates connections without closing them
+10. **Redis Connection Pool Exhaustion** - Creates new Redis client for each request
+
+### Business Logic Bugs
+11. **No Quantity Validation** - Allows negative order quantities
+12. **No Discount Validation** - Allows discount > 100%
+13. **Incorrect Tax Calculation** - Calculates tax on wrong amount
+14. **Cache Invalidation Race** - Updates cache before database commit
+
+## 🏗️ Application Architecture
 
 ```
-Bug Zoo (FastAPI)
-├── Authentication & Authorization
-├── User Management
-├── Product Catalog
-├── Order Processing
+Bug Zoo E-Commerce API
+├── Authentication System (JWT tokens, sessions)
+├── User Management (CRUD operations)
+├── Product Catalog (with pricing & discounts)
+├── Order Processing (cart, checkout, payment)
 ├── Cache Layer (Redis)
 └── Database (PostgreSQL)
 ```
 
-## 🐛 Bug Catalog
-
-### Category 1: Null/None Handling (3 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-001** | Missing Null Check on User Token | `app/services/auth_service.py:validate_token()` | HIGH |
-| **BUG-002** | Unhandled None in Product Price | `app/services/product_service.py:calculate_discount()` | MEDIUM |
-| **BUG-003** | Missing User Validation in Order | `app/services/order_service.py:create_order()` | HIGH |
-
-### Category 2: Authentication/Authorization (3 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-004** | Token Expiry Not Checked | `app/services/auth_service.py:validate_token()` | CRITICAL |
-| **BUG-005** | Missing Permission Check on Delete | `app/services/user_service.py:delete_user()` | CRITICAL |
-| **BUG-006** | Password Hash Not Verified | `app/services/auth_service.py:authenticate_user()` | CRITICAL |
-
-### Category 3: Database Transactions (2 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-007** | Missing Transaction Rollback | `app/services/order_service.py:process_payment()` | HIGH |
-| **BUG-008** | Race Condition in Stock Update | `app/services/product_service.py:decrease_stock()` | MEDIUM |
-
-### Category 4: Race Conditions (2 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-009** | Concurrent Session Creation | `app/services/auth_service.py:create_session()` | MEDIUM |
-| **BUG-010** | Cache Invalidation Race | `app/services/cache_service.py:update_user_cache()` | LOW |
-
-### Category 5: Memory/Resource Leaks (2 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-011** | Unclosed Database Connection | `app/services/product_service.py:bulk_import()` | HIGH |
-| **BUG-012** | Redis Connection Pool Exhaustion | `app/services/cache_service.py:get_cached_data()` | MEDIUM |
-
-### Category 6: Logic/Business Rules (3 bugs)
-
-| Bug ID | Description | Location | Severity |
-|--------|-------------|----------|----------|
-| **BUG-013** | Negative Quantity Allowed | `app/routers/orders.py:create_order()` | MEDIUM |
-| **BUG-014** | Discount Exceeds Price | `app/services/product_service.py:apply_discount()` | LOW |
-| **BUG-015** | Order Total Miscalculation | `app/services/order_service.py:calculate_total()` | MEDIUM |
-
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.11+
-- Docker & Docker Compose (recommended)
-- PostgreSQL (if not using Docker)
-- Redis (if not using Docker)
-
-### Option 1: Docker Compose (Recommended)
+### Using Docker (Recommended)
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd bug-zoo
+git clone https://github.ibm.com/Dhivyadarshan-G1/testingapp.git
+cd testingapp
 
 # Copy environment file
 cp .env.example .env
@@ -97,12 +65,7 @@ docker-compose up -d
 docker-compose logs -f app
 ```
 
-The application will be available at:
-- **API**: http://localhost:8000
-- **Docs**: http://localhost:8000/docs
-- **Bug Control**: http://localhost:8000/bugs/catalog
-
-### Option 2: Local Development
+### Local Development
 
 ```bash
 # Install dependencies
@@ -111,239 +74,243 @@ pip install -r requirements.txt
 # Set up environment
 cp .env.example .env
 
-# Start PostgreSQL and Redis (or use Docker)
+# Start PostgreSQL and Redis
 docker-compose up -d postgres redis
 
 # Run the application
 uvicorn app.main:app --reload
 ```
 
-## 🎮 Usage
+## 📡 API Endpoints
 
-### 1. Explore the API
+Once running, access:
+- **API Documentation**: http://localhost:8000/docs
+- **Alternative Docs**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
 
-Visit http://localhost:8000/docs for interactive API documentation.
+### Main Endpoints
 
-### 2. View Bug Catalog
+**Authentication**
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login and get token
+- `GET /auth/me` - Get current user info
+
+**Users**
+- `GET /users/` - List all users
+- `GET /users/{id}` - Get user by ID
+- `DELETE /users/{id}` - Delete user (buggy!)
+
+**Products**
+- `GET /products/` - List all products
+- `GET /products/{id}` - Get product by ID (buggy!)
+- `POST /products/` - Create product
+- `PUT /products/{id}/discount` - Apply discount (buggy!)
+
+**Orders**
+- `POST /orders/` - Create order (buggy!)
+- `GET /orders/` - List user's orders
+- `POST /orders/{id}/checkout` - Process payment (buggy!)
+
+## 🧪 Testing the Bugs
+
+### Bug 1: Missing Null Check on Token
 
 ```bash
-curl http://localhost:8000/bugs/catalog
-```
-
-### 3. Enable a Specific Bug
-
-```bash
-# Via API
-curl -X POST http://localhost:8000/bugs/001/toggle \
-  -H "Content-Type: application/json" \
-  -d '{"enabled": true}'
-
-# Via Environment Variable
-export BUG_001_ENABLED=true
-```
-
-### 4. Test the Bug
-
-```bash
-# Register a user
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "username": "testuser",
-    "password": "password123"
-  }'
-
-# Try to validate with invalid token (triggers BUG-001)
+# This will crash with 500 error
 curl http://localhost:8000/auth/validate \
-  -H "Authorization: Bearer invalid_token"
+  -H "Authorization: Bearer invalid_token_12345"
+
+# Expected: 401 Unauthorized
+# Actual: 500 Internal Server Error (AttributeError)
 ```
 
-### 5. Run Tests
+### Bug 2: Token Expiry Not Checked
+
+```bash
+# Login and get token
+TOKEN=$(curl -X POST http://localhost:8000/auth/login \
+  -d "username=user@example.com&password=password" | jq -r .access_token)
+
+# Wait for token to expire (or manually create expired token in DB)
+# Token still works even after expiry!
+```
+
+### Bug 3: Password Hash Not Verified
+
+```bash
+# This bug causes all logins to fail because it compares plain text with hash
+curl -X POST http://localhost:8000/auth/login \
+  -d "username=user@example.com&password=correctpassword"
+
+# Always returns 401 even with correct password
+```
+
+### Bug 4: Missing Permission Check
+
+```bash
+# User A can delete User B without permission
+curl -X DELETE http://localhost:8000/users/2 \
+  -H "Authorization: Bearer $USER_A_TOKEN"
+
+# Expected: 403 Forbidden
+# Actual: 204 No Content (deleted!)
+```
+
+### Bug 5: Null Pointer on Discount
+
+```bash
+# Create product without discount
+curl -X POST http://localhost:8000/products/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Test","description":"Test","price":100,"stock_quantity":10}'
+
+# Get product - crashes on discount calculation
+curl http://localhost:8000/products/1
+
+# Expected: 200 with price
+# Actual: 500 (TypeError: unsupported operand type)
+```
+
+### Bug 6: Missing User Validation
+
+```bash
+# Create order with invalid user_id
+curl -X POST http://localhost:8000/orders/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"product_id":1,"quantity":1,"user_id":99999}'
+
+# Expected: 400 Bad Request
+# Actual: 500 (AttributeError: 'NoneType' has no attribute 'email')
+```
+
+### Bug 7: Missing Transaction Rollback
+
+```bash
+# Create order
+ORDER_ID=1
+
+# Try to checkout with invalid payment
+curl -X POST http://localhost:8000/orders/$ORDER_ID/checkout \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"payment_method":"invalid"}'
+
+# Payment fails but order status is already changed to "processing"
+# Expected: Order status remains "pending"
+# Actual: Order status is "processing" (data inconsistency)
+```
+
+### Bug 8: Race Condition in Stock
+
+```bash
+# Two concurrent requests to buy the last item
+# Both succeed, stock becomes negative
+```
+
+### Bug 9: Database Connection Leak
+
+```bash
+# Bulk import products
+curl -X POST http://localhost:8000/products/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"products":[...1000 products...]}'
+
+# Creates 1000 database connections without closing them
+# Eventually exhausts connection pool
+```
+
+### Bug 10: Redis Connection Pool Exhaustion
+
+```bash
+# Make many requests
+for i in {1..100}; do
+  curl http://localhost:8000/products/ &
+done
+
+# Each request creates new Redis connection
+# Eventually exhausts connection pool
+```
+
+## 🔧 Running Tests
 
 ```bash
 # Run all tests
 pytest tests/ -v
 
-# Run specific bug test
-pytest tests/test_bugs.py::TestBugCategory1NullHandling::test_bug_001_missing_null_check_on_token -v
+# Run specific test
+pytest tests/test_bugs.py::test_null_check_on_token -v
 
 # Run with coverage
 pytest tests/ --cov=app --cov-report=html
 ```
 
-## 🔧 Bug Control API
+## 📊 CI/CD Integration
 
-### Get All Bugs Status
+The GitHub Actions workflow automatically:
+1. Runs tests on every push
+2. Detects failures
+3. Can trigger your self-healing agent via webhook
 
-```bash
-GET /bugs/catalog
-```
+See `.github/workflows/ci.yml` for configuration.
 
-### Get Specific Bug Status
+## 🎯 For Self-Healing Agent Testing
 
-```bash
-GET /bugs/{bug_id}
-```
+This application is designed to test self-healing agents that can:
 
-### Toggle Bug On/Off
+1. **Detect bugs** from test failures and stack traces
+2. **Understand context** by analyzing the codebase
+3. **Generate fixes** using AI/LLM
+4. **Validate fixes** by re-running tests
+5. **Learn from fixes** to handle similar bugs faster
 
-```bash
-POST /bugs/{bug_id}/toggle
-{
-  "enabled": true
-}
-```
-
-### Enable All Bugs
-
-```bash
-POST /bugs/enable-all
-```
-
-### Disable All Bugs
-
-```bash
-POST /bugs/disable-all
-```
-
-## 🧪 Testing Strategy
-
-Each bug has three types of tests:
-
-1. **Positive Test** (bug disabled) - Should pass
-2. **Negative Test** (bug enabled) - Should fail
-3. **Fix Validation** - Verifies the expected fix works
-
-### Example Test Flow
-
-```python
-# 1. Enable the bug
-enable_bug("001")
-
-# 2. Run the test (should fail)
-response = client.get("/auth/validate", headers={"Authorization": "Bearer invalid"})
-assert response.status_code == 401  # Fails with bug (returns 500)
-
-# 3. Disable the bug
-disable_bug("001")
-
-# 4. Run again (should pass)
-response = client.get("/auth/validate", headers={"Authorization": "Bearer invalid"})
-assert response.status_code == 401  # Passes without bug
-```
-
-## 🔄 CI/CD Integration
-
-The GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
-
-1. Tests each bug individually
-2. Reports failures with detailed context
-3. Triggers the self-healing agent webhook
-4. Provides bug ID, location, and stack trace
-
-### Trigger CI Manually
-
-```bash
-# Via GitHub UI: Actions → Bug Zoo CI → Run workflow
-
-# Or via API
-curl -X POST \
-  -H "Authorization: token YOUR_GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/OWNER/REPO/actions/workflows/ci.yml/dispatches \
-  -d '{"ref":"main","inputs":{"bug_id":"001"}}'
-```
-
-## 📊 Expected Fixes
-
-Each bug has a documented expected fix:
-
-### BUG-001: Missing Null Check
-
-**Current (Buggy):**
-```python
-user = db.query(User).filter(User.id == session.user_id).first()
-return user
-```
-
-**Expected Fix:**
-```python
-if not session:
-    raise TokenNotFoundError("Invalid or expired token")
-user = db.query(User).filter(User.id == session.user_id).first()
-return user
-```
-
-### BUG-002: Unhandled None in Discount
-
-**Current (Buggy):**
-```python
-discount_amount = product.price * (product.discount_percentage / 100)
-return product.price - discount_amount
-```
-
-**Expected Fix:**
-```python
-if product.discount_percentage is None or product.discount_percentage == 0:
-    return product.price
-discount_amount = product.price * (product.discount_percentage / 100)
-return product.price - discount_amount
-```
-
-*See `docs/bug_catalog.md` for all expected fixes.*
-
-## 🎯 Integration with Self-Healing Agent
-
-### Webhook Payload
-
-When a test fails, the CI sends this payload to your healing agent:
-
-```json
-{
-  "repository": "owner/bug-zoo",
-  "branch": "refs/heads/main",
-  "commit": "abc123...",
-  "bug_id": "001",
-  "test_name": "test_bug_001_missing_null_check_on_token",
-  "workflow_run_id": "123456789",
-  "stack_trace": "...",
-  "file_path": "app/services/auth_service.py",
-  "line_number": 95
-}
-```
-
-### Agent Workflow
-
-1. **Localizer Agent**: Parses stack trace → identifies `auth_service.py:95`
-2. **Memory Searcher**: Queries vector DB → finds similar past fix (94% match)
-3. **Bob Patcher**: Generates fix using context + past fix as template
-4. **Validator**: Applies patch → re-runs test → verifies fix
-5. **PR Agent**: Opens PR with auto-generated description
-
-## 📁 Project Structure
+### Expected Agent Workflow
 
 ```
-bug-zoo/
+1. CI runs tests → Test fails
+2. Agent receives webhook with error details
+3. Agent analyzes code and identifies bug location
+4. Agent searches for similar past fixes (if any)
+5. Agent generates fix using LLM + context
+6. Agent validates fix by running tests
+7. Agent opens PR with fix
+8. Human reviews and merges
+```
+
+## 📝 Bug Documentation
+
+For detailed information about each bug, including:
+- Exact location in code
+- How to trigger it
+- Expected vs actual behavior
+- Expected fix
+
+See `docs/bug_catalog.md`
+
+## 🛠️ Tech Stack
+
+- **Framework**: FastAPI
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **Authentication**: JWT (python-jose)
+- **Password Hashing**: bcrypt
+- **Testing**: pytest
+- **CI/CD**: GitHub Actions
+
+## 📂 Project Structure
+
+```
+testingapp/
 ├── app/
-│   ├── models/          # SQLAlchemy models
-│   ├── routers/         # FastAPI endpoints
+│   ├── models/          # Database models
+│   ├── routers/         # API endpoints
 │   ├── services/        # Business logic (bugs here!)
 │   ├── utils/           # Utilities
-│   ├── config.py        # Settings & bug flags
-│   ├── database.py      # DB setup
+│   ├── config.py        # Configuration
+│   ├── database.py      # Database setup
 │   └── main.py          # FastAPI app
-├── tests/
-│   ├── conftest.py      # Test fixtures
-│   └── test_bugs.py     # Bug tests
-├── .github/
-│   └── workflows/
-│       └── ci.yml       # CI pipeline
-├── docs/
-│   └── bug_catalog.md   # Detailed bug documentation
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
+├── tests/               # Test suite
+├── docs/                # Documentation
+├── .github/workflows/   # CI/CD
+├── docker-compose.yml   # Docker setup
 └── README.md
 ```
 
@@ -351,26 +318,17 @@ bug-zoo/
 
 This is a test application with intentional bugs. To add new bugs:
 
-1. Add bug flag to `app/config.py`
-2. Implement buggy code in appropriate service
-3. Add test in `tests/test_bugs.py`
-4. Document in `docs/bug_catalog.md`
-5. Update CI workflow matrix
+1. Add the buggy code to appropriate service
+2. Document the bug in `docs/bug_catalog.md`
+3. Add test case in `tests/`
+4. Update this README
 
-## 📝 License
+## 📄 License
 
-MIT License - This is a demonstration/testing application.
-
-## 🙏 Acknowledgments
-
-Built for testing the Self-Healing Bug Fix Agent using:
-- **watsonx Orchestrate (wxo)** - Multi-agent orchestration
-- **Project Bob** - Code understanding & patch generation
-- **IBM Granite** - LLM backbone & embeddings
-- **ChromaDB/Milvus** - Vector memory for past fixes
+MIT License - For testing purposes only
 
 ---
 
-**⚠️ Warning**: This application contains intentional bugs. Do not use in production!
+**Repository**: https://github.ibm.com/Dhivyadarshan-G1/testingapp
 
-For questions or issues, please open a GitHub issue.
+**⚠️ Remember**: This application contains intentional bugs. Do not use in production!
