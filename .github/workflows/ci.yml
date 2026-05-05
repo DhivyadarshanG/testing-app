@@ -1,0 +1,138 @@
+name: Bug Zoo CI - Test Self-Healing Agent
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      bug_id:
+        description: 'Bug ID to test (001-015, or "all")'
+        required: true
+        default: 'all'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Test each bug individually
+  test-individual-bugs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bug_id: ['001', '002', '003', '004', '005', '006', '007', '013', '014', '015']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Enable Bug ${{ matrix.bug_id }}
+        run: |
+          echo "BUG_${{ matrix.bug_id }}_ENABLED=true" >> $GITHUB_ENV
+      
+      - name: Run tests for Bug ${{ matrix.bug_id }}
+        id: test
+        continue-on-error: true
+        run: |
+          pytest tests/test_bugs.py::TestBugCategory*::test_bug_${{ matrix.bug_id }}* -v --tb=short
+      
+      - name: Report test failure
+        if: steps.test.outcome == 'failure'
+        run: |
+          echo "::error::Bug ${{ matrix.bug_id }} test failed - triggering healing agent"
+          echo "Bug ID: ${{ matrix.bug_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: FAILED ❌" >> $GITHUB_STEP_SUMMARY
+          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Trigger Self-Healing Agent
+        if: steps.test.outcome == 'failure'
+        run: |
+          # This would call your wxo healing agent webhook
+          # curl -X POST ${{ secrets.HEALING_AGENT_WEBHOOK_URL }} \
+          #   -H "Content-Type: application/json" \
+          #   -d '{
+          #     "repository": "${{ github.repository }}",
+          #     "branch": "${{ github.ref }}",
+          #     "commit": "${{ github.sha }}",
+          #     "bug_id": "${{ matrix.bug_id }}",
+          #     "test_name": "test_bug_${{ matrix.bug_id }}",
+          #     "workflow_run_id": "${{ github.run_id }}"
+          #   }'
+          echo "Would trigger healing agent for Bug ${{ matrix.bug_id }}"
+  
+  # Run all tests together
+  test-all:
+    runs-on: ubuntu-latest
+    needs: test-individual-bugs
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run all tests (bugs disabled)
+        run: |
+          pytest tests/ -v --cov=app --cov-report=term-missing
+      
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All tests completed. Check individual bug test results above." >> $GITHUB_STEP_SUMMARY
+  
+  # Lint and code quality
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+      
+      - name: Run flake8
+        continue-on-error: true
+        run: flake8 app/ --max-line-length=120 --exclude=__pycache__
+      
+      - name: Check code formatting with black
+        continue-on-error: true
+        run: black --check app/
+      
+      - name: Check import sorting
+        continue-on-error: true
+        run: isort --check-only app/
+
+# Made with Bob
