@@ -28,6 +28,8 @@ def calculate_discount(product: Product) -> float:
             raise ValueError("Product price is not set")
         discount_amount = product.price * (product.discount_percentage / 100)
         return discount_amount
+        discount_amount = product.price * (product.discount_percentage / 100)
+        return discount_amount
     return product.price - discount_amount
 
 
