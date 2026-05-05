@@ -21,11 +21,13 @@ def get_products(db: Session, skip: int = 0, limit: int = 100) -> List[Product]:
 def calculate_discount(product: Product) -> float:
     """
     Calculate discounted price for a product.
-    
-    BUG: No null check on discount_percentage - crashes on None
-    """
-    # BUG: Performing math operation on potentially None value
-    discount_amount = product.price * (product.discount_percentage / 100)
+    def calculate_discount(self, product):
+        if product.discount_percentage is None:
+            raise ValueError("Discount percentage is not set for this product")
+        if product.price is None:
+            raise ValueError("Product price is not set")
+        discount_amount = product.price * (product.discount_percentage / 100)
+        return discount_amount
     return product.price - discount_amount
 
 
