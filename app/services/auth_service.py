@@ -39,11 +39,15 @@ def create_session(db: Session, user_id: int) -> UserSession:
         user_id=user_id,
         token=token,
         expires_at=expires_at
-    )
-    db.add(session)
-    db.commit()
-    db.refresh(session)
-    return session
+    def create_session(self, user_id: int) -> Session:
+        session = Session(user_id=user_id)
+        db.add(session)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return self.create_session(user_id)  # retry
+        return session
 
 
 def validate_token(db: Session, token: str) -> Optional[User]:
